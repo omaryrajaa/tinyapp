@@ -10,6 +10,11 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+function generateRandomString() {
+  let randomShortURL = Math.random().toString(36).substring(2,8);
+  console.log("random", randomShortURL);
+}
+
 
 app.set("view engine", "ejs");
 
@@ -29,6 +34,7 @@ app.get("/urls/new", (req, res) => {
 
 app.post("/urls", (req, res) => {
   console.log(req.body);
+  generateRandomString();
   res.send("OK");
 });
 
