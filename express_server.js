@@ -12,11 +12,18 @@ const urlDatabase = {
 
 function generateRandomString() {
   let randomShortURL = Math.random().toString(36).substring(2,8);
-  console.log("random", randomShortURL);
+  return randomShortURL;
 }
 
 
 app.set("view engine", "ejs");
+
+app.post("/urls", (req, res) => {
+  const newLongURL = req.body;
+  const newShortURL = generateRandomString();
+  urlDatabase[newShortURL] = newLongURL["longURL"];
+  res.redirect(`/urls/${newShortURL}`);
+});
 
 app.get("/", (req, res) => {
   res.send(`Hello!`);
@@ -32,11 +39,7 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
-app.post("/urls", (req, res) => {
-  console.log(req.body);
-  generateRandomString();
-  res.send("OK");
-});
+
 
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
