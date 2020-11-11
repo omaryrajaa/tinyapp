@@ -1,6 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-var cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser');
 const app = express();
 app.use(cookieParser());
 const PORT = 8080;
@@ -22,10 +22,16 @@ app.set("view engine", "ejs");
 
 app.post("/login", (req, res) => {
   const username = req.body.username;
-  console.log(username);
-  res.cookie("username", username)
+  res.cookie("username", username);
   res.redirect(`/urls`);
 });
+
+app.post("/logout", (req, res) => {
+  res.clearCookie("username");
+  res.redirect(`/urls`);
+});
+
+
 
 app.post("/urls", (req, res) => {
   const newLongURL = req.body;
@@ -70,7 +76,7 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = {
-    username: req.cookies["username"], 
+    username: req.cookies["username"],
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL]
   };

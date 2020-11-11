@@ -10,7 +10,7 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
         <div class="navbar-nav">
-         <% if (username === "") { %>
+         <% if (username === undefined) { %>
             <form class="form-inline" action="/login" method="POST">
               <input class="form-control mr-sm-2" type="text" name="username" placeholder="Username" style= "margin: 0.5em">
               <button type="submit" class="btn btn-outline-dark">Login</button>
