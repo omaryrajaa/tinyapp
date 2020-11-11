@@ -10,7 +10,7 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
       
-         <% if (username === undefined) { %>
+         <% if (email === undefined) { %>
 
             <form class="form-inline ml-auto" action="/login" method="POST">
               <input class="form-control mr-sm-2" type="text" name="username" placeholder="Username">
@@ -19,7 +19,7 @@
          
          <% } else { %>
          <form class="form-inline ml-auto" action="/logout" method="POST">
-          <span class="navbar-text">Logged In As: <%= username %> !</span>
+          <span class="navbar-text">Logged In As: <%= email %> !</span>
           <button type="submit" class="btn btn-outline-dark">Logout</button>
         </form>
         <% } %>       

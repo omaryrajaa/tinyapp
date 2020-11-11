@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
+const { fetchUser } = require("./helper");
 const app = express();
 app.use(cookieParser());
 const PORT = 8080;
@@ -11,6 +12,19 @@ const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+}
 
 const generateRandomString = () => {
   let randomShortURL = Math.random().toString(36).substring(2,8);
@@ -27,8 +41,8 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
-  res.redirect(`/urls`);
+  res.clearCookie("user_id");
+  res.redirect(`/register`);
 });
 
 
@@ -66,26 +80,64 @@ app.get("/register", (req, res) => {
 
 });
 
+app.post("/register", (req, res) => {
+  console.log(req.body);
+  const { email, password } = req.body;
+  const id = generateRandomString();
+  const newUser = {
+    id,
+    email,
+    password
+  }
+  users[id] = newUser;
+  res.cookie("user_id", id);
+  console.log(users);
+  res.redirect(`/urls`);
+
+});
+
 
 app.get("/urls", (req, res) => {
+  const userId = req.cookies["user_id"];
+  console.log("users = ", users);
+  const fetchedUser = fetchUser(users, userId);
+
+  console.log("fetchedUser = ", fetchedUser)
+
   const templateVars = {
-    username: req.cookies["username"],
+    id: req.cookies["user_id"],
+    email: fetchedUser.email,
+    password: fetchedUser.password,
     urls: urlDatabase
   };
   res.render("urls_index", templateVars);
 
 });
 
+
+
 app.get("/urls/new", (req, res) => {
-  const templateVars = {username: req.cookies["username"]};
+  const userId = req.cookies["user_id"];
+  const fetcedhUser = fetchUser(users, userId);
+
+  const templateVars = {
+    id: req.cookies["user_id"],
+    email: fetchedUser.email,
+    password: fetchedUser.password
+  };
   res.render("urls_new", templateVars);
 });
 
 
 
 app.get("/urls/:shortURL", (req, res) => {
+  const userId = req.cookies["user_id"];
+  const fetchedUser = fetchUser(users, userId);
+
   const templateVars = {
-    username: req.cookies["username"],
+    id: req.cookies["user_id"],
+    email: fetchedUser.email,
+    password: fetchedUser.password,
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL]
   };
