@@ -1,7 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
-const { fetchUser } = require("./helper");
+const { fetchUser, verifyData } = require("./helper");
 const app = express();
 app.use(cookieParser());
 const PORT = 8080;
@@ -13,18 +13,18 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-const users = { 
+const users = {
   "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
+    id: "userRandomID",
+    email: "user@example.com",
     password: "purple-monkey-dinosaur"
   },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
     password: "dishwasher-funk"
   }
-}
+};
 
 const generateRandomString = () => {
   let randomShortURL = Math.random().toString(36).substring(2,8);
@@ -81,28 +81,31 @@ app.get("/register", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-  console.log(req.body);
-  const { email, password } = req.body;
-  const id = generateRandomString();
-  const newUser = {
-    id,
-    email,
-    password
-  }
-  users[id] = newUser;
-  res.cookie("user_id", id);
-  console.log(users);
-  res.redirect(`/urls`);
 
+  const { email, password } = req.body;
+
+  const checkData = verifyData(users, email, password);
+
+  if (checkData.error === '400') {
+    res.status(400);
+    res.send(checkData.message);
+  } else {
+    const id = generateRandomString();
+    const newUser = {
+      id,
+      email,
+      password
+    };
+    users[id] = newUser;
+    res.cookie("user_id", id);
+    res.redirect(`/urls`);
+  }
 });
 
 
 app.get("/urls", (req, res) => {
   const userId = req.cookies["user_id"];
-  console.log("users = ", users);
   const fetchedUser = fetchUser(users, userId);
-
-  console.log("fetchedUser = ", fetchedUser)
 
   const templateVars = {
     id: req.cookies["user_id"],
@@ -118,7 +121,7 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   const userId = req.cookies["user_id"];
-  const fetcedhUser = fetchUser(users, userId);
+  const fetchedUser = fetchUser(users, userId);
 
   const templateVars = {
     id: req.cookies["user_id"],
