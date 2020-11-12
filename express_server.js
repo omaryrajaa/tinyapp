@@ -34,15 +34,13 @@ const generateRandomString = () => {
 
 app.set("view engine", "ejs");
 
-app.post("/login", (req, res) => {
-  const username = req.body.username;
-  res.cookie("username", username);
-  res.redirect(`/urls`);
-});
+
+
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
-  res.redirect(`/register`);
+  res.clearCookie("userId");
+  console.log("logout ", users);
+  res.redirect(`/login`);
 });
 
 
@@ -75,10 +73,23 @@ app.get("/", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
+  const templateVars = {
+    error: null,
+    userId: null};
 
-  res.render("register");
+  res.render("register", templateVars);
 
 });
+
+app.get("/login", (req, res) => {
+  const templateVars = {
+    error: null,
+    userId: null};
+
+  res.render("login", templateVars);
+
+});
+
 
 app.post("/register", (req, res) => {
 
@@ -86,9 +97,12 @@ app.post("/register", (req, res) => {
 
   const checkData = verifyData(users, email, password);
 
-  if (checkData.error === '400') {
+  if (checkData.error === 'email' || checkData.error === 'password' || checkData.error === 'email_exists') {
     res.status(400);
-    res.send(checkData.message);
+    const templateVars = {
+      error: checkData.error,
+      userId: null};
+    return res.render("register", templateVars);
   } else {
     const id = generateRandomString();
     const newUser = {
@@ -97,22 +111,53 @@ app.post("/register", (req, res) => {
       password
     };
     users[id] = newUser;
-    res.cookie("user_id", id);
-    res.redirect(`/urls`);
+    res.cookie("userId", id);
+    console.log(users);
+    return res.redirect(`/urls`);
+  }
+  
+});
+
+
+app.post("/login", (req, res) => {
+  const {email, password} = req.body;
+  const checkData = verifyData(users, email, password);
+  if (checkData.error === 'email_exists') {
+    if (checkData.password !== password) {
+      res.status(403);
+      const templateVars = {
+        error: checkData.error,
+        userId: null};
+      return res.render("login", templateVars);
+    } else {
+      res.cookie('userId', checkData.id);
+      return res.redirect(`/urls`);
+    }
+
+  } else {
+    res.status(403);
+    const templateVars = {
+      error: checkData.error,
+      userId: null};
+    return res.render("login", templateVars);
   }
 });
 
 
+
 app.get("/urls", (req, res) => {
-  const userId = req.cookies["user_id"];
+  let templateVars = {};
+  const userId = req.cookies["userId"];
+  console.log("userId = ", userId);
   const fetchedUser = fetchUser(users, userId);
 
-  const templateVars = {
-    id: req.cookies["user_id"],
+  templateVars = {
+    userId,
     email: fetchedUser.email,
     password: fetchedUser.password,
     urls: urlDatabase
   };
+  console.log("templateVars = ", templateVars);
   res.render("urls_index", templateVars);
 
 });
@@ -120,11 +165,11 @@ app.get("/urls", (req, res) => {
 
 
 app.get("/urls/new", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.cookies["userId"];
   const fetchedUser = fetchUser(users, userId);
 
   const templateVars = {
-    id: req.cookies["user_id"],
+    userId,
     email: fetchedUser.email,
     password: fetchedUser.password
   };
@@ -134,11 +179,11 @@ app.get("/urls/new", (req, res) => {
 
 
 app.get("/urls/:shortURL", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.cookies["userId"];
   const fetchedUser = fetchUser(users, userId);
 
   const templateVars = {
-    id: req.cookies["user_id"],
+    userId,
     email: fetchedUser.email,
     password: fetchedUser.password,
     shortURL: req.params.shortURL,
