@@ -1,11 +1,12 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const bcrypt = require('bcrypt');
 const cookieParser = require('cookie-parser');
 const { fetchUser, verifyData, urlsForUser } = require("./helper");
 const app = express();
-app.use(cookieParser());
 const PORT = 8080;
-
+const saltRounds = 10;
+app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
 
 const urlDatabase = {
@@ -127,8 +128,9 @@ app.post("/register", (req, res) => {
     const newUser = {
       id,
       email: checkData.email,
-      password: checkData.password
+      password: bcrypt.hashSync(checkData.password, saltRounds)
     };
+    console.log("new user = ", newUser )
     users[id] = newUser;
     res.cookie("userId", id);
 
@@ -145,17 +147,20 @@ app.post("/login", (req, res) => {
   const checkData = verifyData(users, email, password);
 
   if (checkData.error === 'email_exists') {
-    if (checkData.password !== password) {
-      
+    if (bcrypt.compareSync(password, checkData.password)) {
+
+      res.cookie('userId', checkData.id);
+      return res.redirect('/urls');
+
+    } else {
+
       const templateVars = {
         error: 403,
         message: "Wrong Password!",
         userId: null};
       res.status(403);
       return res.render("login", templateVars);
-    } else {
-      res.cookie('userId', checkData.id);
-      return res.redirect('/urls');
+
     }
 
   } else {
