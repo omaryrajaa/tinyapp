@@ -1,12 +1,17 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const bcrypt = require('bcrypt');
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const { fetchUser, verifyData, urlsForUser } = require("./helper");
 const app = express();
 const PORT = 8080;
 const saltRounds = 10;
-app.use(cookieParser());
+app.use(
+  cookieSession({
+    name: 'session',
+    keys: ['key1', 'key2'],
+  })
+);
 app.use(bodyParser.urlencoded({extended: true}));
 
 const urlDatabase = {
@@ -18,7 +23,7 @@ const users = {
   "userRandomID": {
     id: "userRandomID",
     email: "user@example.com",
-    password: "user1"
+    password: "$2b$10$7K7mIa7TAFIV0hc29dDxneN7QRlqUyMvzHmOAkpCCotx0jA4nx9P6" //user1
   },
   "user2RandomID": {
     id: "user2RandomID",
@@ -39,7 +44,7 @@ app.set("view engine", "ejs");
 
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("userId");
+  req.session = null;
   res.redirect(`/login`);
 });
 
@@ -48,7 +53,7 @@ app.post("/logout", (req, res) => {
 app.post("/urls", (req, res) => {
   const newLongURL = req.body["longURL"];
   const newShortURL = generateRandomString();
-  const userId = req.cookies["userId"];
+  const userId = req.session['userId'];
   if (userId === null || userId === undefined) {
 
     res.redirect("/login");
@@ -60,7 +65,7 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const userId = req.cookies["userId"];
+  const userId = req.session['userId'];
 
   if (userId === null || userId === undefined) {
 
@@ -130,9 +135,10 @@ app.post("/register", (req, res) => {
       email: checkData.email,
       password: bcrypt.hashSync(checkData.password, saltRounds)
     };
-    console.log("new user = ", newUser )
+
     users[id] = newUser;
-    res.cookie("userId", id);
+    console.log(users);
+    req.session['userId'] = id;
 
     return res.redirect(`/urls`);
   }
@@ -147,9 +153,10 @@ app.post("/login", (req, res) => {
   const checkData = verifyData(users, email, password);
 
   if (checkData.error === 'email_exists') {
+    console.log("password");
     if (bcrypt.compareSync(password, checkData.password)) {
-
-      res.cookie('userId', checkData.id);
+      console.log("inside if email and pwd");
+      req.session['userId'] = checkData.id;
       return res.redirect('/urls');
 
     } else {
@@ -180,7 +187,9 @@ app.post("/login", (req, res) => {
 
 app.get("/urls", (req, res) => {
   let templateVars = {};
-  const userId = req.cookies["userId"];
+
+  
+  const userId = req.session['userId'];
 
   if (userId === null || userId === undefined) {
 
@@ -205,7 +214,7 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   
-  const userId = req.cookies["userId"];
+  const userId = req.session['userId'];
 
   if (userId === null || userId === undefined) {
 
@@ -228,7 +237,7 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
 
 
-  const userId = req.cookies["userId"];
+  const userId = req.session['userId'];
 
   if (userId === null || userId === undefined) {
 
